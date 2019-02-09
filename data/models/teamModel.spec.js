@@ -10,53 +10,62 @@ describe('the team model', () => {
         });
 
         test('returns id of inserted team', async () => {
-            const id = await teamModel.insert({name: 'Broncos', location: 'Denver'});  
+            const id = await teamModel.insert({ name: 'Broncos', location: 'Denver' });
             expect(id).toBe(1);
         });
 
         test('throws error on missing name', async () => {
-            expect(async () => {
-                await teamModel.insert({location: 'Denver'});
-            }).toThrow();
+            const message = "insert into `teams` (`location`) values ('Denver') - SQLITE_CONSTRAINT: NOT NULL constraint failed: teams.name";
+            try {
+                await teamModel.insert({ location: 'Denver' });
+            } catch (e) {
+                expect(e.message).toEqual(message);
+            }
         });
 
         test('throws error on missing location', async () => {
-            expect(async () => {
-                await teamModel.insert({name: 'Broncos'});
-            }).toThrow();
+            const message = "insert into `teams` (`name`) values ('Broncos') - SQLITE_CONSTRAINT: NOT NULL constraint failed: teams.location";
+            try {
+                await teamModel.insert({ name: 'Broncos' });
+            } catch (e) {
+                expect(e.message).toBe(message);
+            }
         });
 
         test('throws error on duplicate name', async () => {
-            expect(async () => {
-                await teamModel.insert({name: 'Broncos', location: 'Denver'});
-                await teamModel.insert({name: 'Broncos', location: 'Denver'});
-            }).toThrow();
+            const message = "insert into `teams` (`location`, `name`) values ('Denver', 'Broncos') - SQLITE_CONSTRAINT: UNIQUE constraint failed: teams.name";
+            try {
+                await teamModel.insert({ name: 'Broncos', location: 'Denver' });
+                await teamModel.insert({ name: 'Broncos', location: 'Denver' });
+            } catch (e) {
+                expect(e.message).toBe(message);
+            }
         });
 
     });
 
     describe('get all function', () => {
 
-        afterAll(async () => {
+        afterEach(async () => {
             await db('teams').truncate();
         });
 
         test('returns array of all teams', async () => {
             await db('teams').truncate();
-            await teamModel.insert({name: 'Broncos', location: 'Denver'});
-            await teamModel.insert({name: 'Raiders', location: 'Oakland'});
-            await teamModel.insert({name: 'Chiefs', location: 'Kansas City'});
+            await teamModel.insert({ name: 'Broncos', location: 'Denver' });
+            await teamModel.insert({ name: 'Raiders', location: 'Oakland' });
+            await teamModel.insert({ name: 'Chiefs', location: 'Kansas City' });
 
             const teams = await teamModel.getAll();
             expect(teams).toEqual([
-                {id: 1, name: 'Broncos', location: 'Denver'},
-                {id: 2, name: 'Raiders', location: 'Oakland'},
-                {id: 3, name: 'Chiefs', location: 'Kansas City'}
+                { id: 1, name: 'Broncos', location: 'Denver' },
+                { id: 2, name: 'Raiders', location: 'Oakland' },
+                { id: 3, name: 'Chiefs', location: 'Kansas City' }
             ]);
         });
 
         test('returns empty array when table empty', async () => {
-            const teams = await teamModel.getAll();  
+            const teams = await teamModel.getAll();
             expect(teams).toEqual([]);
         });
 
@@ -64,21 +73,24 @@ describe('the team model', () => {
 
     describe('find by id function', () => {
 
-        afterAll(async () => {
+        afterEach(async () => {
             await db('teams').truncate();
         });
 
         test('returns team object by id', async () => {
             await db('teams').truncate();
-            const id = await teamModel.insert({name: 'Broncos', location: 'Denver'});
+            const id = await teamModel.insert({ name: 'Broncos', location: 'Denver' });
             const team = await teamModel.findById(id);
-            expect(team).toEqual({id: 1, name: 'Broncos', location: 'Denver'});
+            expect(team).toEqual({ id: 1, name: 'Broncos', location: 'Denver' });
         });
 
         test('throws error on invalid id', async () => {
-            expect(async () => {
+            const message = "Invalid: id does not exist";
+            try {
                 await teamModel.findById(1);
-            }).toThrow();
+            } catch (e) {
+                expect(e.message).toBe(message);
+            }
         });
 
     });
@@ -89,41 +101,59 @@ describe('the team model', () => {
             await db('teams').truncate();
         });
 
-        test('updates the name of a team', async () => {
+        test('returns count of 1 on update of name', async () => {
             await db('teams').truncate();
-            let id = await teamModel.insert({name: 'Broncs', location: 'Denver'});
-            id = await teamModel.update(id, {name: 'Broncos'});
+            const id = await teamModel.insert({ name: 'Broncs', location: 'Denver' });
+            const count = await teamModel.update(id, { name: 'Broncos' });
+            expect(count).toBe(1);
+        });
+
+        test('returns count of 1 on update of location', async () => {
+            await db('teams').truncate();
+            const id = await teamModel.insert({ name: 'Broncos', location: 'Denvr' });
+            const count = await teamModel.update(id, { location: 'Denver' });
+            expect(count).toBe(1);
+        });
+
+        test('changes name correctly on update', async () => {
+            await db('teams').truncate();
+            const id = await teamModel.insert({ name: 'Broncs', location: 'Denver' });
+            await teamModel.update(id, { name: 'Broncos' });
             const team = await teamModel.findById(id);
-            expect(team.id).toBe(1);
             expect(team.name).toBe('Broncos');
         });
 
-        test('updates the location of a team', async () => {
+        test('changes location correctly on update', async () => {
             await db('teams').truncate();
-            let id = await teamModel.insert({name: 'Broncos', location: 'Denvr'});
-            id = await teamModel.update(id, {location: 'Denver'});
+            const id = await teamModel.insert({ name: 'Broncos', location: 'Denvr' });
+            await teamModel.update(id, { location: 'Denver' });
             const team = await teamModel.findById(id);
-            expect(team.id).toBe(1);
             expect(team.location).toBe('Denver');
         });
 
         test('throws error on empty object', async () => {
             await db('teams').truncate();
-            let id = await teamModel.insert({name: 'Broncos', location: 'Denver'});
-            expect(async () => {
-                await teamModel.update(up, {});
-            }).toThrow();
+            let id = await teamModel.insert({ name: 'Broncos', location: 'Denver' });
+            const message = "Empty .update() call detected! Update data does not contain any values to update. This will result in a faulty query.";
+            try {
+                await teamModel.update(id, {});
+            } catch (e) {
+                expect(e.message).toBe(message);
+            }
         });
 
         test('throws error on invalid id', async () => {
-            expect(async () => {
-                await teamModel.update(1, {name: 'Broncos', location: 'Denver'});
-            }).toThrow();
+            const message = "Invalid: id does not exist";
+            try {
+                await teamModel.update(1, { name: 'Broncos', location: 'Denver' });
+            } catch (e) {
+                expect(e.message).toBe(message);
+            }
         });
 
     });
 
-    describe('delete function', () => {
+    describe('remove function', () => {
 
         afterEach(async () => {
             await db('teams').truncate();
@@ -131,15 +161,18 @@ describe('the team model', () => {
 
         test('returns count of 1 on delete', async () => {
             await db('teams').truncate();
-            let id = await teamModel.insert({name: 'Broncos', location: 'Denver'});
-            const count = await teamModel.delete(id);
+            let id = await teamModel.insert({ name: 'Broncos', location: 'Denver' });
+            const count = await teamModel.remove(id);
             expect(count).toBe(1);
         });
 
         test('throws error on invalid id', async () => {
-            expect(async () => {
-                await teamModel.delete(1);
-            }).toThrow();
+            const message = "Invalid: id does not exist";
+            try {
+                await teamModel.remove(1);
+            } catch (e) {
+                expect(e.message).toBe(message);
+            }
         });
 
     });
