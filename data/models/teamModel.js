@@ -9,7 +9,15 @@ module.exports = {
 };
 
 async function insert(team) {
-    return db('teams').insert(team);
+    return null;
+}
+
+function getAll() {
+    return null;
+}
+
+function findById(id) {
+    return null;
 }
 
 async function update(id, team) {
@@ -17,13 +25,5 @@ async function update(id, team) {
 }
 
 function remove(id) {
-    return null;
-}
-
-function getAll() {
-    return db('teams');
-}
-
-function findById(id) {
     return null;
 }
