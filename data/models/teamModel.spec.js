@@ -1,5 +1,5 @@
 const teamModel = require('./teamModel');
-const db = require('../data/dbConfig');
+const db = require('../dbConfig');
 
 describe('the team model', () => {
 
@@ -15,19 +15,19 @@ describe('the team model', () => {
         });
 
         test('throws error on missing name', async () => {
-            expect(() => {
+            expect(async () => {
                 await teamModel.insert({location: 'Denver'});
             }).toThrow();
         });
 
         test('throws error on missing location', async () => {
-            expect(() => {
+            expect(async () => {
                 await teamModel.insert({name: 'Broncos'});
             }).toThrow();
         });
 
         test('throws error on duplicate name', async () => {
-            expect(() => {
+            expect(async () => {
                 await teamModel.insert({name: 'Broncos', location: 'Denver'});
                 await teamModel.insert({name: 'Broncos', location: 'Denver'});
             }).toThrow();
@@ -76,7 +76,7 @@ describe('the team model', () => {
         });
 
         test('throws error on invalid id', async () => {
-            expect(() => {
+            expect(async () => {
                 await teamModel.findById(1);
             }).toThrow();
         });
@@ -110,13 +110,13 @@ describe('the team model', () => {
         test('throws error on empty object', async () => {
             await db('teams').truncate();
             let id = await teamModel.insert({name: 'Broncos', location: 'Denver'});
-            expect(() => {
+            expect(async () => {
                 await teamModel.update(up, {});
             }).toThrow();
         });
 
         test('throws error on invalid id', async () => {
-            expect(() => {
+            expect(async () => {
                 await teamModel.update(1, {name: 'Broncos', location: 'Denver'});
             }).toThrow();
         });
@@ -137,7 +137,7 @@ describe('the team model', () => {
         });
 
         test('throws error on invalid id', async () => {
-            expect(() => {
+            expect(async () => {
                 await teamModel.delete(1);
             }).toThrow();
         });
